@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use base 'Test::Unit::TestRunner';
 use Time::HiRes;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 BEGIN {
     $SIG{'__WARN__'} = sub {
@@ -151,7 +151,7 @@ Test::Unit::ITestRunner - Extends and colorize Test::Unit::TestRunner output
 
   use Test::Unit::ITestRunner;
   my $runner = Test::Unit::ITestRunner->new();
-  $runner->start($my_testcase_class);;
+  $runner->start($my_testcase_class);
 
 See L<Test::Unit::TestRunner> for more information
 
@@ -190,7 +190,7 @@ Test::Unit::ITestRunner
 
 =head1 SEE ALSO
 
-L<Test::Unit>, L<Test::Unit::TestRunner>
+L<Test::Unit>, L<Test::Unit::TestRunner>, L<Time::HiRes>
 
 =head1 AUTHOR
 

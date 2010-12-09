@@ -1,0 +1,2 @@
+0.02
+    Makefile.PL fixed (Time::HiRes in PREREQ_PM)
