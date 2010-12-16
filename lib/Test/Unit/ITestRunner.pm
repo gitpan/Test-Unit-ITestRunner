@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use base 'Test::Unit::TestRunner';
 use Time::HiRes;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 BEGIN {
     $SIG{'__WARN__'} = sub {
@@ -59,6 +59,11 @@ sub add_pass
     my $started_at = $self->{current_test_started_at}; 
     my $time = $self->_getHiResTime - $started_at;
     my $time = sprintf("%0.3f", $time);
+
+    my $testcase = ref($test);
+    my $testname = $test->name;
+
+    push(@{$ENV{ITESTRUNNER_TEST_TIMINGS}}, { test => "$testcase - $testname", timing => $time});
     $self->{current_test_started_at} = 0;
     my $time_warning = 0;
     $time_warning = 1 if $ENV{ITESTRUNNER_MAXTIME} && $time > $ENV{ITESTRUNNER_MAXTIME};
@@ -69,6 +74,26 @@ sub add_pass
         $self->_print(" $time sec\n");
     }
     $self->_printWarnings;
+}
+
+sub print_result
+{
+    my $self = shift;
+
+    my @results = $self->SUPER::print_result(@_);
+    return @results unless $ENV{ITESTRUNNER_SLOWTEST_TOP};
+
+    $ENV{ITESTRUNNER_TEST_TIMINGS} ||= []; 
+    my @slow_tests = sort {$b->{timing} <=> $a->{timing}} @{$ENV{ITESTRUNNER_TEST_TIMINGS}};
+    print "\nSlow tests top:\n";
+    my $count = $ENV{ITESTRUNNER_SLOWTEST_TOP};
+    for my $slow_test(@slow_tests){
+        $count--;
+        $self->_print($slow_test->{timing} . " sec\t". $slow_test->{test} . "\n");
+        last unless $count;
+    }
+
+    return @results;
 }
 
 sub _getHiResTime
@@ -163,6 +188,9 @@ See L<Test::Unit::TestRunner> for more information
   # enable slow test highlight
   # required ITESTRUNNER_COLORIZE = 1
   $ENV{ITESTRUNNER_MAXTIME} = 0.8 # max test time (sec.) # default 0 = disabled
+
+  # show top slow tests
+  $ENV{ITESTRUNNER_SLOWTEST_TOP} = 5 # default 0 = disabled
 
   # set output width
   $ENV{ITESTRUNNER_WIDTH} = 80 # default 120

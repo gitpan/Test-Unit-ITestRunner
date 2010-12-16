@@ -1,2 +1,5 @@
+0.03
+    Slow tests toplist added
+
 0.02
     Makefile.PL fixed (Time::HiRes in PREREQ_PM)
