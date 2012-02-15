@@ -4,14 +4,38 @@ use strict;
 use warnings;
 use base 'Test::Unit::TestRunner';
 use Time::HiRes;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 BEGIN {
+    $ENV{ITESTRUNNER_TEST_WARNINGS_COUNTER} = 0;
     $SIG{'__WARN__'} = sub {
         my $warning = shift;
-        push(@{$ENV{ITESTRUNNER_TEST_WARNINGS}}, $warning); 
+        push(@{$ENV{ITESTRUNNER_TEST_WARNINGS}}, $warning);
+        $ENV{ITESTRUNNER_TEST_WARNINGS_COUNTER} ++;
     };
 };
+
+sub start
+{
+    my $self = shift;
+
+    # print startup warnings
+    $self->_printWarnings;
+    $ENV{ITESTRUNNER_TEST_WARNINGS} = [];
+
+    return $self->SUPER::start(@_);
+}
+
+sub do_run
+{
+    my $self = shift;
+
+    # print test load warnings
+    $self->_printWarnings;
+    $ENV{ITESTRUNNER_TEST_WARNINGS} = [];
+
+    return $self->SUPER::do_run(@_);
+}
 
 sub start_test
 {
@@ -58,7 +82,7 @@ sub add_pass
 
     my $started_at = $self->{current_test_started_at}; 
     my $time = $self->_getHiResTime - $started_at;
-    my $time = sprintf("%0.3f", $time);
+    $time = sprintf("%0.3f", $time);
 
     my $testcase = ref($test);
     my $testname = $test->name;
@@ -81,7 +105,13 @@ sub print_result
     my $self = shift;
 
     my @results = $self->SUPER::print_result(@_);
+
+    if ($ENV{ITESTRUNNER_TEST_WARNINGS_COUNTER}) {
+        $self->_colorPrint('bold light_blue', "Warnings: ". $ENV{ITESTRUNNER_TEST_WARNINGS_COUNTER} . "\n");
+    }
+
     return @results unless $ENV{ITESTRUNNER_SLOWTEST_TOP};
+
 
     $ENV{ITESTRUNNER_TEST_TIMINGS} ||= []; 
     my @slow_tests = sort {$b->{timing} <=> $a->{timing}} @{$ENV{ITESTRUNNER_TEST_TIMINGS}};
