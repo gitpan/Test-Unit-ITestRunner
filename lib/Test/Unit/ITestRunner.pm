@@ -4,13 +4,16 @@ use strict;
 use warnings;
 use base 'Test::Unit::TestRunner';
 use Time::HiRes;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
+
+my $ITESTRUNNER_TEST_WARNINGS = [];
+my $ITESTRUNNER_TEST_TIMINGS = [];
 
 BEGIN {
     $ENV{ITESTRUNNER_TEST_WARNINGS_COUNTER} = 0;
     $SIG{'__WARN__'} = sub {
         my $warning = shift;
-        push(@{$ENV{ITESTRUNNER_TEST_WARNINGS}}, $warning);
+        push(@{$ITESTRUNNER_TEST_WARNINGS}, $warning);
         $ENV{ITESTRUNNER_TEST_WARNINGS_COUNTER} ++;
     };
 };
@@ -21,7 +24,7 @@ sub start
 
     # print startup warnings
     $self->_printWarnings;
-    $ENV{ITESTRUNNER_TEST_WARNINGS} = [];
+    $ITESTRUNNER_TEST_WARNINGS = [];
 
     return $self->SUPER::start(@_);
 }
@@ -32,7 +35,7 @@ sub do_run
 
     # print test load warnings
     $self->_printWarnings;
-    $ENV{ITESTRUNNER_TEST_WARNINGS} = [];
+    $ITESTRUNNER_TEST_WARNINGS = [];
 
     return $self->SUPER::do_run(@_);
 }
@@ -44,7 +47,7 @@ sub start_test
 
     $self->{current_test_started_at} = $self->_getHiResTime;
 
-    $ENV{ITESTRUNNER_TEST_WARNINGS} = [];
+    $ITESTRUNNER_TEST_WARNINGS = [];
     my $testcase = ref($test);
     my $testname = $test->name;
     $self->_print("$testcase - $testname");
@@ -87,7 +90,7 @@ sub add_pass
     my $testcase = ref($test);
     my $testname = $test->name;
 
-    push(@{$ENV{ITESTRUNNER_TEST_TIMINGS}}, { test => "$testcase - $testname", timing => $time});
+    push(@{$ITESTRUNNER_TEST_TIMINGS}, { test => "$testcase - $testname", timing => $time});
     $self->{current_test_started_at} = 0;
     my $time_warning = 0;
     $time_warning = 1 if $ENV{ITESTRUNNER_MAXTIME} && $time > $ENV{ITESTRUNNER_MAXTIME};
@@ -113,8 +116,8 @@ sub print_result
     return @results unless $ENV{ITESTRUNNER_SLOWTEST_TOP};
 
 
-    $ENV{ITESTRUNNER_TEST_TIMINGS} ||= []; 
-    my @slow_tests = sort {$b->{timing} <=> $a->{timing}} @{$ENV{ITESTRUNNER_TEST_TIMINGS}};
+    $ITESTRUNNER_TEST_TIMINGS ||= []; 
+    my @slow_tests = sort {$b->{timing} <=> $a->{timing}} @{$ITESTRUNNER_TEST_TIMINGS};
     print "\nSlow tests top:\n";
     my $count = $ENV{ITESTRUNNER_SLOWTEST_TOP};
     for my $slow_test(@slow_tests){
@@ -150,9 +153,9 @@ sub _printWarnings
 {
     my $self = shift;
 
-    return unless $ENV{ITESTRUNNER_TEST_WARNINGS} && @{$ENV{ITESTRUNNER_TEST_WARNINGS}};
+    return unless $ITESTRUNNER_TEST_WARNINGS && @{$ITESTRUNNER_TEST_WARNINGS};
 
-    for my $warning(@{$ENV{ITESTRUNNER_TEST_WARNINGS}}){
+    for my $warning(@{$ITESTRUNNER_TEST_WARNINGS}){
         $self->_colorPrint('light_blue', "$warning\n");
     }
 }
